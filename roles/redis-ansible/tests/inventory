@@ -1,0 +1,8 @@
+[redis-master]
+node01
+
+[redis-slave]
+node[02:03]
+
+[redis-sentinel]
+node[01:03]

@@ -1,0 +1,13 @@
+[Unit]
+Description=ZabbixServer
+After=network.target
+
+[Service]
+User={{zabbix_user}}
+Group={{zabbix_group}}
+ExecStart={{zabbix_home}}/sbin/zabbix_server
+ExecReload={{zabbix_home}}/sbin/zabbix_server -R config_cache_reload
+PIDFile={{zabbix_pid_file_path}}
+
+[Install]
+WantedBy=multi-user.target

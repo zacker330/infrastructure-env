@@ -1,0 +1,68 @@
+---
+
+- name: "create {{kafka_install_dir}}"
+  file:
+    path: "{{kafka_install_dir}}"
+    state: directory
+    owner: root
+    group: root
+    mode: "uog=rwx"
+  tags:
+    - kafka
+
+- name: Remove lost+found in the datadir
+  become: yes
+  file:
+    path: "{{kafka_data_dir}}/lost+found"
+    state: absent
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+  tags:
+    - kafka
+
+- name: "Fetch kafka binary package from "
+  get_url:
+    dest: "/tmp/kafka_{{ kafka_version_scala }}-{{ kafka_version_kafka }}.tgz"
+    url: "{{kafka_download_url}}"
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+  tags:
+    - kafka
+
+- name: Uncompress the kafka tar
+  become_user: "{{kafka_user}}"
+  unarchive:
+    copy: no
+    dest: "{{kafka_install_dir}}"
+    creates: "{{kafka_install_dir}}/kafka_{{ kafka_version_scala }}-{{ kafka_version_kafka }}"
+    src: "/tmp/kafka_{{ kafka_version_scala }}-{{ kafka_version_kafka }}.tgz"
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+  tags:
+    - kafka
+
+- name: "link kafka_{{ kafka_version_scala }}-{{ kafka_version_kafka }} to {{kafka_home}}"
+  file:
+    src: "kafka_{{ kafka_version_scala }}-{{ kafka_version_kafka }}"
+    dest: "{{KAFKA_HOME}}"
+    state: link
+    owner: "{{kafka_user}}"
+    group: "{{kafka_group}}"
+
+
+- name: Ensure install folders
+  file:
+    recurse: yes
+    state: directory
+    path: "{{ item }}"
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+    mode: "u=rwx,og=r"
+  with_items:
+    - "{{kafka_bin_dir}}"
+    - "{{kafka_tmp_dir}}"
+    - "{{kafka_log_dir}}"
+    - "{{kafka_data_dir}}"
+    - "{{kafka_conf_dir}}"
+  tags:
+    - kafka

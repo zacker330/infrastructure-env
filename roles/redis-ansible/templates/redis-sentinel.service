@@ -1,0 +1,17 @@
+[Unit]
+Description=Redis Datastore Server
+After=network.target
+
+[Service]
+Type=forking
+PIDFile={{redis_sentinel_pidfile}}
+User={{redis_user}}
+
+Environment=statedir={{redis_install_dir}}
+ExecStart={{ redis_install_dir }}/bin/redis-sentinel /etc/redis/redis-sentinel.conf
+ExecReload=/bin/kill -USR2 $MAINPID
+ExecStop=/bin/kill `cat {{redis_sentinel_pidfile}}`
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

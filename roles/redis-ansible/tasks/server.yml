@@ -1,0 +1,59 @@
+---
+- name: enable overcommit in sysctl
+  sysctl:
+    name: vm.overcommit_memory
+    value: 1
+    state: present
+    reload: yes
+    ignoreerrors: yes
+  when: redis_travis_ci is not defined
+
+- name: compile redis
+  command: make -j{{ ansible_processor_cores + 1 }}
+  args:
+    chdir: /opt/redis-{{ redis_version }}
+    creates: /opt/redis-{{ redis_version }}/src/redis-server
+
+- name: create redis install directory
+  file:
+    path: "{{ redis_install_dir }}"
+    state: directory
+    owner: "{{ redis_user }}"
+
+- name: create /etc/redis
+  file:
+    path: /etc/redis
+    state: directory
+    owner: "{{ redis_user }}"
+
+- name: install redis
+  command: make PREFIX={{ redis_install_dir }} install
+  args:
+    chdir: /opt/redis-{{ redis_version }}
+    creates: "{{ redis_install_dir }}/bin/redis-server"
+
+- name: create redis working directory
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+    owner: "{{ redis_user }}"
+  with_items:
+      - "{{ redis_log_dir }}"
+      - "{{ redis_work_dir }}"
+      - "/var/run/redis"
+
+
+- name: config redis.conf
+  template: src=redis-server.conf.j2 dest=/etc/redis/redis-server.conf owner={{ redis_user }} force=true
+  notify: restart redis-server
+
+- name: create redis init script
+  template:
+    src: redis-server.service
+    dest: /etc/systemd/system/
+    mode: 0755
+
+
+- name: set redis running and onboot
+  service: name=redis-server state=restarted enabled=yes

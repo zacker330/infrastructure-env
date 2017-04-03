@@ -1,0 +1,36 @@
+---
+# defaults file for ansible-redis
+#redis
+redis_version: 3.2.6
+redis_tar_file_name: "redis-{{redis_version}}.tar.gz"
+redis_tar_download_url: "http://download.redis.io/releases/{{redis_tar_file_name}}"
+redis_tar_download_path: "/opt/{{redis_tar_file_name}}"
+redis_install_dir: /opt/redis
+redis_work_dir: /var/lib/redis
+redis_port: 6379
+reids_bind_ip: 0.0.0.0
+redis_user: redis
+redis_master: false
+redis_password: false
+redis_log_dir: /var/log/redis
+redis_log_file: "{{ redis_log_dir }}/redis-server.log"
+redis_slaveof: false
+redis_sentinel_pidfile: /run/redis/redis_sentinel.pid
+redis_server_pidfile: /run/redis/redis_server.pid
+#redis-sentinel
+redis_sentinel: false
+redis_sentinel_work_dir:  /var/lib/redis
+redis_sentinel_port: 26379
+redis_sentinel_logfile: "{{ redis_log_dir }}/redis-sentinel.log"
+redis_sentinel_bind_ip: 0.0.0.0
+redis_sentinel_monitors:
+  - name: master01
+    host: localhost
+    port: 6379
+    quorum: 2
+    auth_pass: ant1r3z
+    down_after_milliseconds: 30000
+    parallel_syncs: 1
+    failover_timeout: 180000
+    notification_script: false
+    client_reconfig_script: false

@@ -1,0 +1,29 @@
+[redis-master]
+192.168.23.11 env=r710-env
+
+[redis-slave]
+192.168.23.12 env=r710-env
+
+[redis-sentinel]
+192.168.23.11 env=r710-env
+192.168.23.12 env=r710-env
+
+[zookeeper]
+192.168.23.11 myid=1 env=r710-env
+192.168.23.12 myid=2 env=r710-env
+192.168.23.13 myid=3 env=r710-env
+
+
+[mysql]
+192.168.23.13 env=r710-env
+
+
+[zabbix-server]
+192.168.23.13 env=r710-env
+
+[mysql-server]
+192.168.23.13 env=r710-env
+
+
+[kafka]
+192.168.23.14 env=r710-env

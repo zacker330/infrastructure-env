@@ -1,0 +1,13 @@
+---
+zabbixserver_packages:
+  # - build-essential
+  - gcc
+  - curl
+  - wget
+  - mariadb-devel # required by zabbix server with mysql
+  - libxml2-devel
+  - net-snmp-devel
+  - libcurl-devel
+  - libssh2-devel
+  - libXpm
+  - t1lib

@@ -1,0 +1,16 @@
+[Unit]
+Description=Zookeeper
+After=network.target
+
+[Service]
+User={{zookeeper_user}}
+Group={{zookeeper_group}}
+#EnvironmentFile="{{ zookeeper_conf_dir }}/environment"
+#Environment="ZOO_LOG_DIR=/home/zookeeper/zookeeper/log"
+Environment=JAVA_HOME={{JAVA_HOME}}
+Environment="ZOO_LOG_DIR=/home/zookeeper/log"
+ExecStart={{zookeeper_install_dir}}/bin/zkServer.sh start-foreground
+ExecStop={{zookeeper_install_dir}}/bin/zkServer.sh stop
+
+[Install]
+WantedBy=multi-user.target

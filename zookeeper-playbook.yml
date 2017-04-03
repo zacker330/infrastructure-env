@@ -1,0 +1,14 @@
+- hosts: all
+  become: yes
+  vars_files:
+    - "vars/{{env}}.yml"
+  roles:
+    - common
+
+- hosts: zookeeper
+  become: yes
+  vars_files:
+    - "vars/{{env}}.yml"
+  roles:
+    - jdk8
+    - {role: "zookeeper-ansible"}

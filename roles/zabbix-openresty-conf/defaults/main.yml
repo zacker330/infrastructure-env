@@ -1,0 +1,4 @@
+---
+# defaults file for php-openresty
+zabbix_nginx_conf: /etc/openresty/nginx/conf/servers
+zabbix_nginx_listen_host: 192.168.23.13

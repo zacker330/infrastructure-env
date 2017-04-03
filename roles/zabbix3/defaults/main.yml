@@ -1,0 +1,17 @@
+---
+# defaults file for zabbix3_2
+zabbix_version: 3.2.3
+zabbix_tar_file_name: "zabbix-{{zabbix_version}}.tar.gz"
+zabbix_download_url: "http://liquidtelecom.dl.sourceforge.net/project/zabbix/ZABBIX%20Latest%20Stable/{{zabbix_version}}/{{zabbix_tar_file_name}}"
+zabbix_user: zabbix
+zabbix_group: zabbix
+zabbix_user_home: "/usr/local/{{zabbix_user}}"
+zabbix_mysql_dbname: zabbix
+zabbix_home: "/usr/local/zabbix"
+zabbix_tar_exact_path: "/usr/local/zabbix-{{ zabbix_version }}"
+zabbix_frontends_path: "{{zabbix_home}}/frontends/"
+zabbix_log_dir: "{{zabbix_home}}/logs"
+zabbix_server_listenPort: 10061
+zabbix_pid_file_path: "{{zabbix_home}}/zabbix_server.pid"
+zabbix_admin_update_sql_path: /tmp/update.sql
+zabbixserver: zabbixserver

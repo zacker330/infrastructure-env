@@ -1,0 +1,9 @@
+---
+
+- name: restart kafka
+  service:
+    name: kafka.service
+    state: restarted
+    enabled: true
+  tags:
+    - kafka

@@ -1,0 +1,60 @@
+---
+JAVA_HOME: /usr/lib/jvm/java
+hosts: |
+  127.0.0.1 localhost
+  192.168.23.11 redis-master
+  192.168.23.12 redis-slave1
+  192.168.23.13 zabbix-server
+
+### redis
+redis_port: 6379
+
+### zookeeper
+zookeeper_client_port: 2181
+zookeeper_connect_port: 2888
+zookeeper_election_port: 3888
+
+### mysql
+mysql_port: 3306
+mysql_bind_ip: 192.168.23.13
+mysql_connect_ip: 192.168.23.13
+mysql_root_username: root
+mysql_root_password: xxxxxxx
+mysql_remote_username: remote
+mysql_remote_password: remotexx
+
+### Zabbix
+# zabbix_server_DBHost: "{{mysql_bind_ip}}"
+# zabbix_server_DBName: zabbix
+# zabbix_server_DBUser: zabbix
+# zabbix_server_DBPassword: asdfebn2
+zabbix_user: zabbix
+zabbix_group: zabbix
+zabbix_user_home: "/home/{{zabbix_user}}"
+zabbix_mysql_dbname: zabbix
+zabbix_mysql_username: zabbix
+zabbix_mysql_password: zabbix
+zabbix_mysql_port: 3306
+zabbix_nginx_conf:  /usr/local/nginx/nginx/conf/servers
+# zabbix_home: "{{zabbix_user_home}}/zabbix"
+# zabbix_tar_exact_path: "{{zabbix_user_home}}/zabbix-{{ zabbix_version }}"
+# zabbix_frontends_path: "{{zabbix_home}}/frontends/"
+### Zabbix API
+zabbix_url: "http://192.168.23.13"
+zabbix_api_user: Admin
+zabbix_api_pass: zabbix
+
+
+### firewall
+firewall_allowed_tcp_ports:
+  - "22"
+  - "{{redis_port}}"
+  - "{{zookeeper_client_port}}"
+  - "{{zookeeper_connect_port}}"
+  - "{{zookeeper_election_port}}"
+
+
+zookeeper_hosts:
+  - "192.168.23.11:{{zookeeper_connect_port}}:{{zookeeper_election_port}}"
+  - "192.168.23.12:{{zookeeper_connect_port}}:{{zookeeper_election_port}}"
+  - "192.168.23.13:{{zookeeper_connect_port}}:{{zookeeper_election_port}}"

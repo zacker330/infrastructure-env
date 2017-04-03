@@ -1,0 +1,31 @@
+---
+- include: "centos.yml"
+  when: ansible_os_family == 'RedHat'
+
+- include: ubuntu.yml
+  when: ansible_distribution == "Ubuntu"
+# - name: copy hosts
+#   copy: src="hosts" dest="/etc/hosts" force=yes
+
+# - name: strict host key checking no
+#   blockinfile:
+#     dest: /etc/ssh/ssh_config
+#     block: |
+#        StrictHostKeyChecking no
+#   tags:
+#     - common
+
+
+- name: add /sbin to path
+  lineinfile: dest="/etc/profile" line="PATH=/sbin/:$PATH"
+  tags:
+    - common
+
+- name: update host
+  template:
+    src: hosts
+    dest: /etc/hosts
+    force: true
+  when: hosts is defined
+  tags:
+    - common

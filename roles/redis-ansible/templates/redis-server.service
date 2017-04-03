@@ -1,0 +1,17 @@
+[Unit]
+Description=Redis Datastore Server
+After=network.target
+
+[Service]
+Type=forking
+PIDFile={{redis_server_pidfile}}
+User={{redis_user}}
+
+Environment=statedir={{redis_install_dir}}
+ExecStart={{ redis_install_dir }}/bin/redis-server /etc/redis/redis-server.conf
+ExecReload=/bin/kill -USR2 $MAINPID
+ExecStop={{redis_install_dir}}/bin/redis-cli shutdown
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

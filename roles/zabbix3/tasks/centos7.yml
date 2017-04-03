@@ -1,0 +1,272 @@
+---
+- name: Create zabbix user group
+  become: yes
+  group: name={{zabbix_group}} state=present
+  tags:
+    - zabbix3
+
+- name: Create zabbix user
+  become: yes
+  user:
+    name: "{{zabbix_user}}"
+    group: "{{zabbix_group}}"
+    system: true
+    # shell:
+  tags:
+    - zabbix3
+
+- name: Install zabbixrequired system packages.
+  become: yes
+  package: name={{ item }} state=installed update_cache=true
+  with_items: "{{ zabbixserver_packages }}"
+  tags:
+    - zabbix3
+
+- name: "copy {{zabbix_tar_file_name}}"
+  copy:
+    src: "{{zabbix_tar_file_name}}"
+    dest: "/tmp"
+  ignore_errors: true
+
+- stat:
+    path: "/tmp/{{zabbix_tar_file_name}}"
+  register: zabbix_tar_file
+
+
+- name: "Download zabbix from {{zabbix_download_url}}"
+  get_url: url="{{zabbix_download_url}}" dest="/usr/local/{{zabbix_tar_file_name}}" mode="uog=rw"
+  register: zabbix_download
+  tags:
+    - zabbix3
+  when: zabbix_tar_file.stat.exists == False
+
+- name: create log dir
+  file:
+    path: "{{zabbix_log_dir}}"
+    state: directory
+    mode: 0775
+    owner: "{{zabbix_user}}"
+    group: "{{zabbix_group}}"
+  tags:
+    - zabbix3
+
+- stat: path="/usr/local/{{zabbix_tar_file_name}}"
+  register: zabbix_tar_stat
+  tags:
+    - zabbix3
+
+- name:  Extract zabbix  tar
+  unarchive: src="/usr/local/{{zabbix_tar_file_name}}" dest="{{zabbix_tar_exact_path}}" copy=no owner={{ zabbix_user }} group={{ zabbix_group }}
+  tags:
+    - zabbix3
+
+- stat: path={{zabbix_tar_exact_path}}/Makefile
+  register: makefile_stat
+  tags:
+    - zabbix3
+
+
+- name: Configure Make install
+  shell: "./configure  --prefix={{zabbix_home}} --enable-server --enable-web --with-net-snmp --with-libcurl --with-libcurl2 --with-ssh2 --with-mysql"
+  args:
+    chdir: "{{zabbix_tar_exact_path}}/"
+  tags:
+    - zabbix3
+
+- name: Make install
+  become: yes
+  shell: make install
+  args:
+    chdir: "{{zabbix_tar_exact_path}}/"
+  tags:
+    - zabbix3
+
+- name: check if mysql db already exists
+  shell: "mysql -h{{mysql_connect_ip}} -u{{mysql_remote_username}} -p{{ mysql_remote_password }} -e 'SHOW DATABASES;' | grep {{ zabbix_mysql_dbname }}"
+  ignore_errors: yes
+  no_log: yes
+  register: server_dbstatus
+  tags:
+    - zabbix3
+
+- name: config zabbix
+  template:
+    src: zabbix_server.conf
+    dest: "{{zabbix_home}}/etc/"
+    owner: "{{zabbix_user}}"
+    group: "{{zabbix_group}}"
+    mode: "ug=rw,o=r"
+  tags:
+    - zabbix3
+
+- name: set owner zabbix folder
+  file:
+    recurse: yes
+    path: "{{zabbix_home}}"
+    owner: "{{zabbix_user}}"
+    group: "{{zabbix_group}}"
+  tags:
+    - zabbix3
+
+- name: create mysql database
+  mysql_db:
+    name: "{{ zabbix_mysql_dbname }}"
+    state: "present"
+    login_host: "{{mysql_connect_ip}}"
+    login_user: "{{mysql_remote_username}}"
+    login_password: "{{mysql_remote_password}}"
+    login_port: "{{mysql_port}}"
+  when: server_dbstatus.rc != 0
+  tags:
+    - zabbix3
+
+
+- name: import mysql schema table
+  mysql_db:
+    name: "{{ zabbix_mysql_dbname }}"
+    state: import
+    target: "{{zabbix_tar_exact_path}}/database/mysql/schema.sql"
+    login_host: "{{mysql_connect_ip}}"
+    login_user: "{{mysql_remote_username}}"
+    login_password: "{{mysql_remote_password}}"
+    login_port: "{{mysql_port}}"
+  when: server_dbstatus.rc != 0
+  no_log: true
+  tags:
+    - zabbix3
+
+- name: import mysql images table
+  mysql_db:
+    name: "{{ zabbix_mysql_dbname }}"
+    state: import
+    target: "{{zabbix_tar_exact_path}}/database/mysql/images.sql"
+    login_host: "{{mysql_connect_ip}}"
+    login_user: "{{mysql_remote_username}}"
+    login_password: "{{mysql_remote_password}}"
+    login_port: "{{mysql_port}}"
+  when: server_dbstatus.rc != 0
+  no_log: true
+  tags:
+    - zabbix3
+
+- name: import mysql data table
+  mysql_db:
+    name: "{{ zabbix_mysql_dbname }}"
+    state: import
+    target: "{{zabbix_tar_exact_path}}/database/mysql/data.sql"
+    login_host: "{{mysql_connect_ip}}"
+    login_user: "{{mysql_remote_username}}"
+    login_password: "{{mysql_remote_password}}"
+    login_port: "{{mysql_port}}"
+  when: server_dbstatus.rc != 0
+  no_log: true
+  tags:
+    - zabbix3
+
+- name: "copy {{zabbix_admin_update_sql_path}}"
+  template:
+    src: "sql/zabbix_admin_update.sql"
+    dest: "{{zabbix_admin_update_sql_path}}"
+    owner: "{{zabbix_user}}"
+    group: "{{zabbix_group}}"
+    mode: "u=rwx"
+  no_log: true
+  ignore_errors: true
+  tags:
+    - zabbix3
+
+- name: update zabbix admin password
+  become: yes
+  mysql_db:
+    name: "{{ zabbix_mysql_dbname }}"
+    state: import
+    target: "{{zabbix_admin_update_sql_path}}"
+    login_host: "{{mysql_connect_ip}}"
+    login_user: "{{mysql_remote_username}}"
+    login_password: "{{mysql_remote_password}}"
+    login_port: "{{mysql_port}}"
+  when: server_dbstatus.rc != 0
+  tags:
+    - zabbix3
+
+
+- name: "delete {{zabbix_admin_update_sql_path}}"
+  file:
+    path: "{{zabbix_admin_update_sql_path}}"
+    state: absent
+  no_log: true
+  tags:
+    - zabbix3
+
+- name: "mkdir"
+  file:
+    path: "{{item}}"
+    state: directory
+    owner: "{{zabbix_user}}"
+    group: "{{zabbix_group}}"
+    mode: "u=rwx,og=rx"
+  with_items:
+    - "{{zabbix_frontends_path}}/php/"
+    - "{{zabbix_frontends_path}}/conf/"
+  tags:
+    - zabbix3
+
+- shell: "su -c {{zabbix_user}} 'cp -r {{zabbix_tar_exact_path}}/frontends/php/* {{zabbix_frontends_path}}/php'"
+  tags:
+    - zabbix3
+
+# - name: "copy zabbix php from {{zabbix_tar_exact_path}}/frontends/php/"
+#   copy:
+#     src: "{{zabbix_tar_exact_path}}/frontends/php/"
+#     dest: "{{zabbix_frontends_path}}/"
+#     remote_src: true
+#     directory_mode: true
+#     owner: "{{zabbix_user}}"
+#     group: "{{zabbix_group}}"
+#     mode: "u=rwx,og=rx"
+#   become: yes
+#   tags:
+#     - zabbix3
+
+- name: zabbix.conf.php
+  template:
+    dest: "{{zabbix_home}}/frontends/conf/"
+    src: zabbix.conf.php
+    owner: "{{zabbix_user}}"
+    group: "{{zabbix_group}}"
+    mode: "ug=rw,o=r"
+  become: yes
+  tags:
+    - zabbix3
+
+- name: set owner
+  file:
+    path: "{{zabbix_frontends_path}}"
+    recurse: true
+    owner: "{{zabbix_user}}"
+    group: "{{zabbix_group}}"
+    mode: "ug=rwx,o=rwx"
+  tags:
+    - zabbix3
+
+- name: copy zabbixserver service
+  template:
+    src: zabbixserver.service
+    dest: /etc/systemd/system/
+    owner: "{{zabbix_user}}"
+    group: "{{zabbix_group}}"
+    mode: "ug=rwx,o=r"
+  tags:
+    - zabbix3
+
+
+- name: reload systemd
+  command: "systemctl daemon-reload"
+  become: true
+  tags:
+    - zabbix3
+
+- name: restart zabbix server
+  service: name=zabbixserver state=restarted
+  tags:
+    - zabbix3

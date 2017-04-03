@@ -1,0 +1,24 @@
+---
+- include: preinstall.yml
+  tags:
+    - preinstall
+  when: not redis_sentinel
+
+- include: server.yml
+  tags:
+    - server
+  when: not redis_sentinel
+
+- include: sentinel.yml
+  tags:
+    - sentinel
+  when: redis_sentinel
+
+- include: clean.yml
+  tags:
+    - clean
+  when: not redis_sentinel
+- include: remove.yml
+  tags:
+    - remove
+  when: remove is defined

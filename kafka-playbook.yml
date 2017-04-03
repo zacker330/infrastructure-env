@@ -1,0 +1,8 @@
+- hosts: kafka1
+  become: yes
+  vars_files:
+    - "vars/{{env}}.yml"
+  roles:
+    - common
+    - jdk8
+    - {role: "zookeeper-ansible"}
