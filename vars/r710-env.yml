@@ -66,22 +66,24 @@ elasticsearch_http_port: 9200
 elasticsearch_bind_ip: 192.168.23.14
 elasticsearch_host_url: "http://192.168.23.14:{{elasticsearch_http_port}}"
 
+### Kibana
+kibana_bind_host: 192.168.23.14
 
-kibana_bind_ip: 192.168.23.14
+### logstash
 logstash_bind_ip: 192.168.23.14
 logstash_inner_ip: 192.168.23.14
 logstash_bind_tcp_port: 5045
 logstash_bind_beats_port: 5044
 
 ### firewall
-firewall_allowed_tcp_ports:
-  - "22"
-  - "{{redis_port}}"
-  - "{{zookeeper_client_port}}"
-  - "{{zookeeper_connect_port}}"
-  - "{{zookeeper_election_port}}"
-  - "80"
-  - "443"
+# firewall_allowed_tcp_ports:
+#   - "22"
+#   - "{{redis_port}}"
+#   - "{{zookeeper_client_port}}"
+#   - "{{zookeeper_connect_port}}"
+#   - "{{zookeeper_election_port}}"
+#   - "80"
+#   - "443"
 
 
 zookeeper_hosts:

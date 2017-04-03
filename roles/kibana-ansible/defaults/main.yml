@@ -6,7 +6,7 @@ kibana_service_name: kibana
 kibana_install_dir: /app
 kibana_home: "{{kibana_install_dir}}/kibana"
 kibana_http_port: 5601
-kibana_bind_host: "{{kibana_bind_ip}}"
+kibana_bind_host: "0.0.0.0"
 kibana_config_file: "{{kibana_home}}/config/kibana.yml"
 kibana_log_folder: /var/log/kibana
 kibana_version: 5.2.2-linux-x86_64

@@ -1,0 +1,6 @@
+---
+# tasks file for syslog-ng-ansible
+# - name: install syslog-ng
+#   yum:
+#     name: syslog-ng
+#     state: present

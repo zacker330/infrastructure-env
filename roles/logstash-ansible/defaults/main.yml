@@ -11,3 +11,16 @@ logstash_service_name: logstash
 logstash_version: 5.2.2
 logstash_tar_file_name: "logstash-{{logstash_version}}.tar.gz"
 logstash_download_url: "https://artifacts.elastic.co/downloads/logstash/{{logstash_tar_file_name}}"
+logstash_input: |
+  beats {
+      host => "{{logstash_inner_ip}}"
+      port => "{{logstash_bind_beats_port}}"
+      type => "smart-cloud"
+  }
+  tcp {
+    port => "{{logstash_bind_tcp_port}}"
+    type => "gateway"
+  }
+logstash_filter: ""
+logstash_output: |
+  elasticsearch { hosts => ["{{elasticsearch_host_url}}"] }

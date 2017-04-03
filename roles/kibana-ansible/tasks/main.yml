@@ -132,6 +132,6 @@
     state: "restarted"
 
 - wait_for:
-    host: "{{ip}}"
+    host: "{{kibana_bind_host}}"
     port: "{{kibana_http_port}}"
     delay: 10
