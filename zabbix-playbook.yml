@@ -1,25 +1,25 @@
-# - hosts: all
-#   become: yes
-#   vars_files:
-#     - "vars/{{env}}.yml"
-#   roles:
-#     - common
-#
-# - hosts: mysql-server
-#   become: yes
-#   vars_files:
-#     - "vars/{{env}}.yml"
-#   roles:
-#     - {role: "ansible-role-mysql", "mysql_users":[{name: "{{mysql_remote_username}}",host: "%",password: "{{mysql_remote_password}}",priv: "*.*:ALL"}]}
+- hosts: all
+  become: yes
+  vars_files:
+    - "vars/{{env}}.yml"
+  roles:
+    - common
+
+- hosts: mysql-server
+  become: yes
+  vars_files:
+    - "vars/{{env}}.yml"
+  roles:
+    - {role: "ansible-role-mysql", "mysql_users":[{name: "{{mysql_remote_username}}",host: "%",password: "{{mysql_remote_password}}",priv: "*.*:ALL"}]}
 
 - hosts: zabbix-server
   become: yes
   vars_files:
     - "vars/{{env}}.yml"
   roles:
-    # - common
+    - common
     - {role: "php7"}
     - {role: "openresty"}
     - {role: "zabbix3"}
     - {role: "zabbix-openresty-conf"}
-    - {role: "firewall-ansible"}
+    - {role: "firewall-ansible", firewall_allowed_tcp_ports: ["22", "80"]}
