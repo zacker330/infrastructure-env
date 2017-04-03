@@ -1,0 +1,26 @@
+---
+# defaults file for elasticsearch-ansible
+elasticsearch_version: 5.2.2
+elasticsearch_tar_file_name: "elasticsearch-{{elasticsearch_version}}.tar.gz"
+elasticsearch_download_url: "https://artifacts.elastic.co/downloads/elasticsearch/{{elasticsearch_tar_file_name}}"
+
+elasticsearch_username: elasticsearch
+elasticsearch_group: elasticsearch
+
+elasticsearch_cluster_name: elasticsearch
+
+elasticsearch_http_port: 9200
+
+elasticsearch_MAX_OPEN_FILES: 70536
+elasticsearch_vm_max_map_count: 262144
+
+elasticsearch_install_dir: /app
+elasticsearch_home: "{{elasticsearch_install_dir}}/elasticsearch"
+elasticsearch_conf_path: "{{elasticsearch_home}}/config"
+elasticsearch_conf_file: "{{elasticsearch_conf_path}}/elasticsearch.yml"
+elasticsearch_log_folder: /var/log/elasticsearch
+elasticsearch_data_folder: /usr/local/elasticsearch_data
+elasticsearch_pid_folder: /var/run/elasticsearch
+elasticsearch_pid_file_name: elasticsearch.pid
+
+elasticsearch_service_name: elasticsearch

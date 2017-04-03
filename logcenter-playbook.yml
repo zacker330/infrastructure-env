@@ -1,0 +1,28 @@
+- hosts: all
+  become: yes
+  vars_files:
+    - "vars/{{env}}.yml"
+  roles:
+    - common
+
+- hosts: syslog-ng-agents
+  become: yes
+  vars_files:
+    - "vars/{{env}}.yml"
+  roles:
+    - syslog-ng-ansible
+
+
+- hosts: log-access
+  become: yes
+  vars_files:
+    - "vars/{{env}}.yml"
+  roles:
+    - common
+    - {role: "firewall-ansible", firewall_allowed_tcp_ports: ["22", "5140", "80", "9200", "5601"]}
+    - {role: "openresty"}
+    - {role: "log-access-openresty-conf"}
+    - jdk8
+    - logstash-ansible
+    - elasticsearch-ansible
+    - kibana-ansible

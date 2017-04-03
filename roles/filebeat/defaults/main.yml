@@ -1,0 +1,24 @@
+---
+# defaults file for filebeat
+filebeat_version: 5.2.2-x86_64
+filebeat_tar_file_name: "filebeat-{{filebeat_version}}.rpm"
+filebeat_download_url: "https://artifacts.elastic.co/downloads/beats/filebeat/{{filebeat_tar_file_name}}"
+# filebeat_config:
+#   filebeat:
+#     prospectors:
+#       - paths:
+#           - /var/log/nginx/*.log
+#         input_type: access
+#   output.kafka:
+#     # initial brokers for reading cluster metadata
+#     hosts: "{{ kafka_hosts }}"
+#     # message topic selection + partitioning
+#     topic: 'nginx'
+#     partition.round_robin:
+#       reachable_only: false
+#     required_acks: 1
+#     compression: gzip
+#     max_message_bytes: 1000000
+#   logging:
+#     to_syslog: true
+#     level: error

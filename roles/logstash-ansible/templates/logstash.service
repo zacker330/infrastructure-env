@@ -1,0 +1,14 @@
+[Unit]
+Description=logstash
+After=network.target
+
+[Service]
+User={{logstash_username}}
+Group={{logstash_group}}
+Type=simple
+Environment=JAVA_HOME={{JAVA_HOME}}
+PIDFile={{logstash_pid_folder}}/logstash.pid
+ExecStart={{logstash_home}}/bin/logstash -f {{logstash_config_file}} --path.logs {{logstash_log_folder}}
+ExecStop=kill `cat {{logstash_pid_folder}}/logstash.pid`
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,13 @@
+---
+# defaults file for logstash-ansible
+logstash_username: logstash
+logstash_group: logstash
+logstash_install_dir: /app
+logstash_pid_folder: /var/run/logstash
+logstash_home: "{{logstash_install_dir}}/logstash"
+logstash_config_file: "{{logstash_home}}/logstash.conf"
+logstash_log_folder: /var/log/logstash
+logstash_service_name: logstash
+logstash_version: 5.2.2
+logstash_tar_file_name: "logstash-{{logstash_version}}.tar.gz"
+logstash_download_url: "https://artifacts.elastic.co/downloads/logstash/{{logstash_tar_file_name}}"

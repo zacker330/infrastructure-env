@@ -8,8 +8,9 @@ zabbix_group: zabbix
 zabbix_user_home: "/usr/local/{{zabbix_user}}"
 zabbix_mysql_dbname: zabbix
 zabbix_home: "/usr/local/zabbix"
-zabbix_tar_exact_path: "/usr/local/zabbix-{{ zabbix_version }}"
-zabbix_frontends_path: "{{zabbix_home}}/frontends/"
+zabbix_tar_exact_dir: "/usr/local"
+zabbix_tar_exact_path: "{{zabbix_tar_exact_dir}}/zabbix-{{zabbix_version}}"
+zabbix_frontends_path: "{{zabbix_home}}/frontends"
 zabbix_log_dir: "{{zabbix_home}}/logs"
 zabbix_server_listenPort: 10061
 zabbix_pid_file_path: "{{zabbix_home}}/zabbix_server.pid"

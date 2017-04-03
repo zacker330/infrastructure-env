@@ -38,7 +38,7 @@
   args:
     chdir: "/tmp/{{openresty_version}}/"
   with_items:
-    - ./configure --with-luajit
+    - ./configure --with-luajit --with-stream --with-stream_ssl_module
     - make
     - make install
   when: openresty.stat.exists == False
@@ -60,6 +60,18 @@
   become: true
   tags:
     - openresty
+
+- name: mkdir stream folder
+  file:
+    path: "{{nginx_stream_conf_path}}"
+    owner: "root"
+    group: "root"
+    state: directory
+    mode: "u=rwx,og=rx"
+  tags:
+    - openresty
+
+
 - name: copy nginx.service to /etc/systemd/system/
   template: src="nginx.service" dest="/etc/systemd/system/" force=true owner=root group=root
   become: true

@@ -15,6 +15,17 @@
   tags:
     - zabbix3
 
+
+- name: "copy {{zabbix_tar_file_name}}"
+  copy:
+    src: "{{zabbix_tar_file_name}}"
+    dest: "/tmp"
+  ignore_errors: true
+  tags:
+    - zabbix3
+
+
+
 - name: Install zabbixrequired system packages.
   become: yes
   package: name={{ item }} state=installed update_cache=true
@@ -22,16 +33,11 @@
   tags:
     - zabbix3
 
-- name: "copy {{zabbix_tar_file_name}}"
-  copy:
-    src: "{{zabbix_tar_file_name}}"
-    dest: "/tmp"
-  ignore_errors: true
-
 - stat:
     path: "/tmp/{{zabbix_tar_file_name}}"
   register: zabbix_tar_file
-
+  tags:
+    - zabbix3
 
 - name: "Download zabbix from {{zabbix_download_url}}"
   get_url: url="{{zabbix_download_url}}" dest="/usr/local/{{zabbix_tar_file_name}}" mode="uog=rw"
@@ -56,7 +62,7 @@
     - zabbix3
 
 - name:  Extract zabbix  tar
-  unarchive: src="/usr/local/{{zabbix_tar_file_name}}" dest="{{zabbix_tar_exact_path}}" copy=no owner={{ zabbix_user }} group={{ zabbix_group }}
+  unarchive: src="/tmp/{{zabbix_tar_file_name}}" dest="{{zabbix_tar_exact_dir}}" copy=no owner={{ zabbix_user }} group={{ zabbix_group }}
   tags:
     - zabbix3
 
@@ -66,7 +72,7 @@
     - zabbix3
 
 
-- name: Configure Make install
+- name: "Configure Make install in {{zabbix_tar_exact_path}}"
   shell: "./configure  --prefix={{zabbix_home}} --enable-server --enable-web --with-net-snmp --with-libcurl --with-libcurl2 --with-ssh2 --with-mysql"
   args:
     chdir: "{{zabbix_tar_exact_path}}/"
@@ -211,9 +217,18 @@
   tags:
     - zabbix3
 
-- shell: "su -c {{zabbix_user}} 'cp -r {{zabbix_tar_exact_path}}/frontends/php/* {{zabbix_frontends_path}}/php'"
+- shell: "cp -r {{zabbix_tar_exact_path}}/frontends/php/ {{zabbix_frontends_path}}/"
+  become: true
+  become_user: "{{zabbix_user}}"
   tags:
     - zabbix3
+
+- file:
+    path: "{{zabbix_frontends_path}}/"
+    state: directory
+    recurse: yes
+    mode: "u=rxw,og=rx"
+
 
 # - name: "copy zabbix php from {{zabbix_tar_exact_path}}/frontends/php/"
 #   copy:

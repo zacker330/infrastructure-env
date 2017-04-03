@@ -1,0 +1,12 @@
+---
+# tasks file for php-openresty
+- name: template logaccess.conf
+  template:
+    src: logaccess.conf
+    dest: "{{nginx_stream_conf_path}}"
+    owner: root
+    group: root
+    mode: "u=rxw,og=rx"
+  tags:
+    - logaccess
+  notify: restart nginx

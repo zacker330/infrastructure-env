@@ -1,0 +1,13 @@
+[Unit]
+Description=Kibana
+
+[Service]
+Type=simple
+User={{kibana_username}}
+Group={{kibana_group}}
+Environment=CONFIG_PATH={{kibana_config_file}}
+Environment=NODE_ENV=production
+ExecStart={{kibana_home}}/node/bin/node {{kibana_home}}/src/cli
+
+[Install]
+WantedBy=multi-user.target

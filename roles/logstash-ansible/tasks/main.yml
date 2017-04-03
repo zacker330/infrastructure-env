@@ -1,0 +1,131 @@
+---
+# tasks file for logstash-ansible
+
+- name: "create {{logstash_group}} "
+  group: name={{ logstash_group }} state=present
+
+- name: "create {{ logstash_username }}"
+  user: name={{ logstash_username }} groups={{ logstash_group }} append=yes
+
+
+- name: "mkdir {{logstash_install_dir}}"
+  file:
+    path: "{{logstash_install_dir}}"
+    state: directory
+    owner: "root"
+    group: "root"
+    mode: "uog=rwx"
+
+- name: "mkdir logstash folders"
+  file:
+    path: "{{item}}"
+    state: directory
+    owner: "{{logstash_username}}"
+    group: "{{logstash_group}}"
+    mode: "u=rwx,og=r"
+  with_items:
+    - "{{logstash_pid_folder}}"
+
+- name: cp logstash
+  copy:
+    src: "{{logstash_tar_file_name}}"
+    dest: "{{logstash_install_dir}}/{{logstash_tar_file_name}}"
+    owner: "{{logstash_username}}"
+    group: "{{logstash_group}}"
+    mode: "u=rx,og=r"
+  ignore_errors: yes
+
+- stat:
+    path: "{{logstash_install_dir}}/{{logstash_tar_file_name}}"
+  register: logstash_tar
+
+- name: download logstash
+  get_url:
+    url: "{{logstash_download_url}}"
+    dest: "{{logstash_install_dir}}/{{logstash_tar_file_name}}"
+    owner: "{{logstash_username}}"
+    group: "{{logstash_group}}"
+    mode: "u=rx,og=r"
+    validate_certs: no
+  when: logstash_tar.stat.exists == False
+
+
+
+- name: unarchive logstash
+  unarchive:
+    src: "{{logstash_install_dir}}/{{logstash_tar_file_name}}"
+    dest: "{{logstash_install_dir}}"
+    remote_src: True
+    owner: "{{logstash_username}}"
+    group: "{{logstash_group}}"
+    mode: "u=rwx,og=rx"
+
+
+- name: mkdir logstash home link
+  file:
+    dest: "{{logstash_home}}"
+    src: "{{logstash_install_dir}}/logstash-{{logstash_version}}"
+    owner: "{{logstash_username}}"
+    state: link
+    group: "{{logstash_group}}"
+    mode: "u=rwx,og=rx"
+
+- name: template logstash config
+  template:
+    src: logstash.conf
+    dest: "{{logstash_home}}/"
+    owner: "{{logstash_username}}"
+    group: "{{logstash_group}}"
+    mode: "u=rwx,og=r"
+
+- name: template logstash.service
+  template:
+    src: logstash.service
+    dest: "/etc/systemd/system/logstash.service"
+    owner: "{{logstash_username}}"
+    group: "{{logstash_group}}"
+    mode: "u=rwx,og=rx"
+
+- name: reload systemd
+  become: yes
+  command: "systemctl daemon-reload"
+
+
+# - name: Open firewalld ports for logstash
+#   firewalld:
+#     port: "{{ item }}/tcp"
+#     permanent: true
+#     state: enabled
+#     immediate: yes
+#   with_items:
+#     - "{{ logstash_http_port }}"
+#     # - "{{ logstash_port_transport }}"
+#   when:
+#     (use_firewalld is defined and use_firewalld)
+#
+# - name: Open ufw ports for logstash
+#   ufw:
+#     port: "{{ item }}"
+#     proto: tcp
+#     direction: in
+#     policy: allow
+#   with_items:
+#     - "{{ logstash_http_port }}"
+#     - "{{ logstash_port_transport }}"
+#   when:
+#     (use_ufw is defined and use_ufw)
+
+- name: mkdir log folder
+  file:
+    path: "{{logstash_log_folder}}"
+    state: directory
+    owner: "{{logstash_username}}"
+    group: "{{logstash_group}}"
+    mode: "u=rwx,og=r"
+
+
+- name: restart service
+  become: yes
+  service:
+    name: "{{logstash_service_name}}"
+    state: "restarted"

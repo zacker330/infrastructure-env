@@ -1,0 +1,72 @@
+
+# Make sure the configuration is reloaded (if required) before continuing
+- meta: flush_handlers
+
+- name: Wait for ElasticSearch to start
+  wait_for:
+    host: "{{ elasticsearch_bind }}"
+    port: "{{ elasticsearch_port_http }}"
+    delay: 1
+
+# Handle case when we are working behind a proxy server in a private network, so
+# if squid_hostname is set (& optionally squid_port), connect via that instead.
+
+- block:
+    - name: Install plugins in ElasticSearch
+      command: >
+        /usr/share/elasticsearch/bin/plugin \
+          -Dhttp.proxyHost="{{ squid_hostname }}" \
+          -Dhttp.proxyPort="{{ squid_port | default(3128) }}" \
+          -Dhttps.proxyHost="{{ squid_hostname }}" \
+          -Dhttps.proxyPort="{{ squid_port | default(3128) }}" \
+          install "{{ item }}"
+      args:
+        creates: "/usr/share/elasticsearch/plugins/{{ item }}"
+      ignore_errors: true
+      with_items:
+        "{{ elasticsearch_plugins_add }}"
+      notify:
+        restart elasticsearch
+
+    - name: Remove plugins from ElasticSearch
+      command: >
+        /usr/share/elasticsearch/bin/plugin \
+          -Dhttp.proxyHost="{{ squid_hostname }}" \
+          -Dhttp.proxyPort="{{ squid_port | default(3128) }}" \
+          -Dhttps.proxyHost="{{ squid_hostname }}" \
+          -Dhttps.proxyPort="{{ squid_port | default(3128) }}" \
+          remove "{{ item }}"
+      args:
+        removes: "/usr/share/elasticsearch/plugins/{{ item }}"
+      ignore_errors: true
+      with_items:
+        "{{ elasticsearch_plugins_remove }}"
+      notify:
+        restart elasticsearch
+  when:
+    (squid_hostname is defined and squid_hostname != "")
+
+- block:
+    - name: Install plugins in ElasticSearch
+      command: >
+        /usr/share/elasticsearch/bin/plugin install "{{ item }}"
+      args:
+        creates: "/usr/share/elasticsearch/plugins/{{ item }}"
+      ignore_errors: true
+      with_items:
+        "{{ elasticsearch_plugins_add }}"
+      notify:
+        restart elasticsearch
+
+    - name: Remove plugins from ElasticSearch
+      command: >
+        /usr/share/elasticsearch/bin/plugin remove "{{ item }}"
+      args:
+        removes: "/usr/share/elasticsearch/plugins/{{ item }}"
+      ignore_errors: true
+      with_items:
+        "{{ elasticsearch_plugins_remove }}"
+      notify:
+        restart elasticsearch
+  when:
+    (squid_hostname is undefined or squid_hostname != "")

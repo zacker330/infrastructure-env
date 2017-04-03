@@ -1,0 +1,19 @@
+network.host: [{{elasticsearch_bind_ip}}]
+network.publish_host: [{{elasticsearch_bind_ip}}]
+http.host: [{{elasticsearch_bind_ip}}]
+http.publish_host: [{{elasticsearch_bind_ip}}]
+transport.host: [{{elasticsearch_bind_ip}}]
+transport.publish_host: [{{elasticsearch_bind_ip}}]
+
+http.port: {{elasticsearch_http_port}}
+transport.tcp.port: 9300
+
+cluster.name: elasticsearch
+node.name: esnode-{{elasticsearch_bind_ip}}
+node.master: true
+node.data: true
+
+path.data: {{elasticsearch_data_folder}}
+path.logs: {{elasticsearch_log_folder}}
+
+action.destructive_requires_name: true

@@ -1,0 +1,51 @@
+---
+# tasks file for filebeat
+- stat: path="/tmp/{{filebeat_tar_file_name}}"
+  register: filebeat_tar
+  tags:
+    - filebeat
+
+- name: copy filebeat
+  copy:
+    src: "{{ filebeat_tar_file_name }}"
+    dest: "/tmp/{{filebeat_tar_file_name}}"
+    mode: "u=rx,og=r"
+  ignore_errors: true
+
+- stat:
+    path: "/tmp/{{filebeat_tar_file_name}}"
+  register: filebeat_tar
+
+- name: get filebeat
+  get_url: url="{{ filebeat_download_url }}" dest="/tmp/{{filebeat_tar_file_name}}" validate_certs=no
+  when: filebeat_tar.stat.exists == False
+  tags:
+    - filebeat
+
+- name: install filebeat
+  yum: name="/tmp/{{filebeat_tar_file_name}}" state=present
+  tags:
+    - filebeat
+
+
+- name: config filebeat
+  template: src="filebeat.yml" dest="/etc/filebeat/filebeat.yml" force=true
+  tags:
+    - filebeat
+  notify:
+    - restart filebeat
+
+- name: flush handlers to prevent start then restart
+  meta: flush_handlers
+  tags:
+    - install
+    - filebeat
+    - config
+
+- name: start and enable filebeat
+  service:
+    name: filebeat
+    state: restarted
+    enabled: true
+  tags:
+    - filebeat

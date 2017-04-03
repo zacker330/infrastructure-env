@@ -1,0 +1,17 @@
+---
+# defaults file for kibana-ansible
+kibana_group: kibana
+kibana_username: kibana
+kibana_service_name: kibana
+kibana_install_dir: /app
+kibana_home: "{{kibana_install_dir}}/kibana"
+kibana_http_port: 5601
+kibana_bind_host: "{{kibana_bind_ip}}"
+kibana_config_file: "{{kibana_home}}/config/kibana.yml"
+kibana_log_folder: /var/log/kibana
+kibana_version: 5.2.2-linux-x86_64
+kibana_tar_file_name: "kibana-{{kibana_version}}.tar.gz"
+kibana_download_url: "https://artifacts.elastic.co/downloads/kibana/{{kibana_tar_file_name}}"
+
+kibana_pid_folder: /var/run/kibana
+kibana_pid_file: "{{kibana_pid_folder}}/kibana.pid"

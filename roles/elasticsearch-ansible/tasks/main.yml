@@ -1,0 +1,146 @@
+---
+# tasks file for elasticsearch-ansible
+
+- name: "create {{elasticsearch_group}} "
+  group: name={{ elasticsearch_group }} state=present
+
+- name: "create {{ elasticsearch_username }}"
+  user: name={{ elasticsearch_username }} groups={{ elasticsearch_group }} append=yes
+
+- name: increase MAX_OPEN_FILES
+  lineinfile:
+    dest: "/etc/security/limits.conf"
+    state: present
+    line: "{{elasticsearch_username}} hard nofile {{elasticsearch_MAX_OPEN_FILES}}"
+  # with_items:
+    # - "{{elasticsearch_username}} hard nofile {{elasticsearch_MAX_OPEN_FILES}}"
+    # - "{{elasticsearch_username}} soft nofile {{elasticsearch_MAX_OPEN_FILES}}"
+
+- name: "mkdir {{elasticsearch_install_dir}}"
+  file:
+    path: "{{elasticsearch_install_dir}}"
+    state: directory
+    owner: "root"
+    group: "root"
+    mode: "uog=rwx"
+
+- name: "mkdir elasticsearch folders"
+  file:
+    path: "{{item}}"
+    state: directory
+    owner: "{{elasticsearch_username}}"
+    group: "{{elasticsearch_group}}"
+    mode: "u=rwx,og=r"
+  with_items:
+    - "{{elasticsearch_log_folder}}"
+    - "{{elasticsearch_data_folder}}"
+    - "{{elasticsearch_pid_folder}}"
+
+
+
+- name: copy elasticsearch
+  copy:
+    src: "{{elasticsearch_tar_file_name}}"
+    dest: "{{elasticsearch_install_dir}}/{{elasticsearch_tar_file_name}}"
+    owner: "{{elasticsearch_username}}"
+    group: "{{elasticsearch_group}}"
+    mode: "u=rx,og=r"
+  ignore_errors: true
+
+- stat:
+    path: "{{elasticsearch_install_dir}}/{{elasticsearch_tar_file_name}}"
+  register: elasticsearch_tar
+
+- name: "download elasticsearch {{elasticsearch_download_url}}"
+  get_url:
+    url: "{{elasticsearch_download_url}}"
+    dest: "{{elasticsearch_install_dir}}/{{elasticsearch_tar_file_name}}"
+    owner: "{{elasticsearch_username}}"
+    group: "{{elasticsearch_group}}"
+    mode: "u=rx,og=r"
+    # checksum: "sha1:2b19e0e334db8880e352c392a52d464be3d8bc0b"
+  when: elasticsearch_tar.stat.exists == False
+
+- name: unarchive elasticsearch
+  unarchive:
+    src: "{{elasticsearch_install_dir}}/{{elasticsearch_tar_file_name}}"
+    dest: "{{elasticsearch_install_dir}}"
+    remote_src: True
+    owner: "{{elasticsearch_username}}"
+    group: "{{elasticsearch_group}}"
+    mode: "u=rwx,og=rx"
+
+
+- name: mkdir elasticsearch home link
+  file:
+    dest: "{{elasticsearch_home}}"
+    src: "{{elasticsearch_install_dir}}/elasticsearch-{{elasticsearch_version}}"
+    owner: "{{elasticsearch_username}}"
+    state: link
+    group: "{{elasticsearch_group}}"
+    mode: "u=rwx,og=rx"
+
+- name: template elasticsearch config
+  template:
+    src: elasticsearch.yml
+    dest: "{{elasticsearch_home}}/config"
+    owner: "{{elasticsearch_username}}"
+    group: "{{elasticsearch_group}}"
+    mode: "u=rwx,og=r"
+
+- name: template elasticsearch.sh
+  template:
+    src: elasticsearch.sh
+    dest: "{{elasticsearch_home}}/elasticsearch.sh"
+    owner: "{{elasticsearch_username}}"
+    group: "{{elasticsearch_group}}"
+    mode: "u=rwx,og=rx"
+    force: true
+
+
+# - name: Open firewalld ports for ElasticSearch
+#   firewalld:
+#     port: "{{ item }}/tcp"
+#     permanent: true
+#     state: enabled
+#     immediate: yes
+#   with_items:
+#     - "{{ elasticsearch_http_port }}"
+#     # - "{{ elasticsearch_port_transport }}"
+#   when:
+#     (use_firewalld is defined and use_firewalld)
+#
+# - name: Open ufw ports for ElasticSearch
+#   ufw:
+#     port: "{{ item }}"
+#     proto: tcp
+#     direction: in
+#     policy: allow
+#   with_items:
+#     - "{{ elasticsearch_http_port }}"
+#     - "{{ elasticsearch_port_transport }}"
+#   when:
+#     (use_ufw is defined and use_ufw)
+
+- name: reload systemd
+  become: yes
+  command: "systemctl daemon-reload"
+
+- name: vm
+  become: yes
+  command: "/usr/sbin/sysctl -q -w vm.max_map_count=$MAX_MAP_COUNT"
+
+- name: restart
+  become: yes
+  shell: "{{elasticsearch_home}}/elasticsearch.sh restart"
+
+# - name: restart service
+#   become: yes
+#   service:
+#     name: "{{elasticsearch_service_name}}"
+#     state: "restarted"
+
+- wait_for:
+    host: "{{elasticsearch_bind_ip}}"
+    port: "{{elasticsearch_http_port}}"
+    delay: 10

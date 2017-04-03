@@ -1,0 +1,137 @@
+---
+# tasks file for kibana-ansible
+
+- name: "create {{kibana_group}} "
+  group: name={{ kibana_group }} state=present
+
+- name: "create {{ kibana_username }}"
+  user: name={{ kibana_username }} groups={{ kibana_group }} append=yes
+
+
+- name: "mkdir {{kibana_install_dir}}"
+  file:
+    path: "{{kibana_install_dir}}"
+    state: directory
+    owner: "root"
+    group: "root"
+    mode: "uog=rwx"
+
+- name: "mkdir kibana folders"
+  file:
+    path: "{{item}}"
+    state: directory
+    owner: "{{kibana_username}}"
+    group: "{{kibana_group}}"
+    mode: "u=rwx,og=r"
+  with_items:
+    - "{{kibana_pid_folder}}"
+
+- name: cp kibana
+  copy:
+    src: "{{kibana_tar_file_name}}"
+    dest: "{{kibana_install_dir}}/{{kibana_tar_file_name}}"
+    owner: "{{kibana_username}}"
+    group: "{{kibana_group}}"
+    mode: "u=rx,og=r"
+  ignore_errors: yes
+
+- stat:
+    path: "{{kibana_install_dir}}/{{kibana_tar_file_name}}"
+  register: kibana_tar
+
+- name: download kibana
+  get_url:
+    url: "{{kibana_download_url}}"
+    dest: "{{kibana_install_dir}}/{{kibana_tar_file_name}}"
+    owner: "{{kibana_username}}"
+    group: "{{kibana_group}}"
+    mode: "u=rx,og=r"
+    validate_certs: no
+    checksum: "sha1:2b19e0e334db8880e352c392a52d464be3d8bc0b"
+  when: kibana_tar.stat.exists == False
+
+
+
+- name: unarchive kibana
+  unarchive:
+    src: "{{kibana_install_dir}}/{{kibana_tar_file_name}}"
+    dest: "{{kibana_install_dir}}"
+    remote_src: True
+    owner: "{{kibana_username}}"
+    group: "{{kibana_group}}"
+    mode: "u=rwx,og=rx"
+
+
+- name: mkdir kibana home link
+  file:
+    dest: "{{kibana_home}}"
+    src: "{{kibana_install_dir}}/kibana-{{kibana_version}}"
+    owner: "{{kibana_username}}"
+    state: link
+    group: "{{kibana_group}}"
+    mode: "u=rwx,og=rx"
+
+- name: template kibana config
+  template:
+    src: kibana.yml
+    dest: "{{kibana_home}}/config"
+    owner: "{{kibana_username}}"
+    group: "{{kibana_group}}"
+    mode: "u=rwx,og=r"
+
+- name: template kibana.service
+  template:
+    src: kibana.service
+    dest: "/etc/systemd/system/kibana.service"
+    owner: "{{kibana_username}}"
+    group: "{{kibana_group}}"
+    mode: "u=rwx,og=rx"
+
+- name: reload systemd
+  become: yes
+  command: "systemctl daemon-reload"
+
+
+# - name: Open firewalld ports for kibana
+#   firewalld:
+#     port: "{{ item }}/tcp"
+#     permanent: true
+#     state: enabled
+#     immediate: yes
+#   with_items:
+#     - "{{ kibana_http_port }}"
+#     # - "{{ kibana_port_transport }}"
+#   when:
+#     (use_firewalld is defined and use_firewalld)
+#
+# - name: Open ufw ports for kibana
+#   ufw:
+#     port: "{{ item }}"
+#     proto: tcp
+#     direction: in
+#     policy: allow
+#   with_items:
+#     - "{{ kibana_http_port }}"
+#     - "{{ kibana_port_transport }}"
+#   when:
+#     (use_ufw is defined and use_ufw)
+
+- name: mkdir log folder
+  file:
+    path: "{{kibana_log_folder}}"
+    state: directory
+    owner: "{{kibana_username}}"
+    group: "{{kibana_group}}"
+    mode: "u=rwx,og=r"
+
+
+- name: restart service
+  become: yes
+  service:
+    name: "{{kibana_service_name}}"
+    state: "restarted"
+
+- wait_for:
+    host: "{{ip}}"
+    port: "{{kibana_http_port}}"
+    delay: 10

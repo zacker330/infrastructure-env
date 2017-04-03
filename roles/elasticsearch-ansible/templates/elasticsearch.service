@@ -1,0 +1,17 @@
+[Unit]
+Description=elasticsearch
+After=network.target
+
+[Service]
+User={{elasticsearch_username}}
+Group={{elasticsearch_group}}
+Type=forking
+Environment=JAVA_HOME={{JAVA_HOME}}
+Environment=ES_HOME={{elasticsearch_home}}
+Environment=MAX_OPEN_FILES={{elasticsearch_MAX_OPEN_FILES}}
+#ExecStartPre=/usr/sbin/sysctl -q -w vm.max_map_count=$MAX_MAP_COUNT
+ExecStart={{elasticsearch_home}}/bin/elasticsearch.sh start
+ExecStop={{elasticsearch_home}}/bin/elasticsearch.sh stop
+
+[Install]
+WantedBy=multi-user.target
