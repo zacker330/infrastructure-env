@@ -1,21 +1,29 @@
 ---
 - name: "update aliyun centos-{{ansible_distribution_major_version}} repo"
   copy: src="Centos-{{ansible_distribution_major_version}}.repo" dest="/etc/yum.repos.d/" owner="root" group="root" mode="0755"
-
-- name: conf yum.conf
-  template: src="yum.conf" dest="/etc" owner="root" group="root" mode="0755"
-
-- name: yum clean all and makecache
-  command: "{{item}}"
-  with_items:
-    - yum clean all
-    # - yum makecache
-  args:
-    warn: no
-
+  when: enableAliYunRepo == True
+  tags:
+    - common
+    
+# - name: conf yum.conf
+#   template: src="yum.conf" dest="/etc" owner="root" group="root" mode="0755"
+#   tags:
+#     - common
+# - name: yum clean all and makecache
+#   command: "{{item}}"
+#   with_items:
+#     - yum clean all
+#     # - yum makecache
+#   args:
+#     warn: no
+#   tags:
+#     - common
 - name: install prepare
   yum: name="{{item}}" state="present"
   with_items:
     - wget
     - unzip
+    - tar
     - openssh-server
+  tags:
+    - common

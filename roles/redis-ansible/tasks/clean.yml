@@ -1,3 +1,0 @@
----
-- name: clean | clean temp directory
-  file: path=/opt/redis-{{ redis_version }} state=directory state=absent

@@ -1,0 +1,6 @@
+[redis-master]
+192.168.23.11 env=local-test
+
+[redis-slave]
+192.168.23.12 env=local-test redis_bind=192.168.23.12
+192.168.23.13 env=local-test redis_bind=192.168.23.13

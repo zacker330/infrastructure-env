@@ -1,0 +1,5 @@
+---
+redis_user: redis
+redis_group: redis
+redis_master_bind_ip: 192.168.23.11
+redis_master_bind_port: 6389

@@ -1,47 +1,22 @@
 ---
-- hosts: all
+- hosts: redis-master
   become: yes
   vars_files:
-    - "vars/{{ env }}.yml"
+    - "./vars/{{ env }}.yml"
+  vars:
+    redis_bind: "{{redis_master_bind_ip}}"
   roles:
     - common
-    - {role: "firewall-ansible"}
-
-- hosts: redis-master
-  remote_user: root
-  vars_files:
-    - "vars/{{ env }}.yml"
-  vars:
-      redis_password: admin
-  roles:
+    - {role: "firewall-ansible", firewall_allowed_tcp_ports: ["22", "{{redis_port}}"] }
     - redis-ansible
 
 - hosts: redis-slave
+  become: yes
   vars_files:
     - "vars/{{ env }}.yml"
   vars:
-      redis_slaveof: redis-master 6379
-      redis_password: admin
-  remote_user: root
+      redis_slaveof: "{{redis_master_bind_ip}} {{redis_master_bind_port}}"
   roles:
-    - redis-ansible
-
-
-- hosts: redis-sentinel
-  remote_user: root
-  vars:
-     redis_sentinel: true
-     redis_sentinel_monitors:
-         - name: redis-cluster
-           host: 192.168.23.11
-           port: 6379
-           quorum: 2
-           auth_pass: admin
-           down_after_milliseconds: 30000
-           parallel_syncs: 1
-           failover_timeout: 180000
-           notification_script: false
-           client_reconfig_script: false
-
-  roles:
+    - common
+    - {role: "firewall-ansible", firewall_allowed_tcp_ports: ["22", "{{redis_port}}"] }
     - redis-ansible

@@ -1,24 +1,153 @@
 ---
-- include: preinstall.yml
-  tags:
-    - preinstall
-  when: not redis_sentinel
 
-- include: server.yml
-  tags:
-    - server
-  when: not redis_sentinel
+- name: "check user is exists"
+  shell: "id {{redis_user}} >& /dev/null"
+  register: user_exist
+  ignore_errors: true
 
-- include: sentinel.yml
-  tags:
-    - sentinel
-  when: redis_sentinel
+- name: "create user if not exists"
+  user:
+    name: "{{redis_user}}"
+    shell: /sbin/nologin
+  when: user_exist != 0
 
-- include: clean.yml
+
+- name: "create group if not exists"
+  group:
+    name: "{{redis_group}}"
+    state: present
+
+
+- stat: path={{ redis_dir }}
+  register: redis
+
+- name: install dependencies
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - gcc
+    - make
+    # - libc6-dev
+
+- name: download redis {{redis_download_url}}
+  get_url: url="{{redis_download_url}}" dest="/usr/local/src/" owner={{ redis_user }} group={{ redis_group }}
+  when: redis.stat.exists == False
   tags:
-    - clean
-  when: not redis_sentinel
-- include: remove.yml
+    - install
+
+- name: extract redis tarball
+  unarchive:
+    src: /usr/local/src/redis-{{ redis_version }}.tar.gz
+    dest: /usr/local/src
+    creates: /usr/local/src/redis-{{ redis_version }}/Makefile
+    copy: no
+  when: redis.stat.exists == False
+
+- name: compile redis
+  command: make -j{{ ansible_processor_cores + 1 }}
+  args:
+    chdir: /usr/local/src/redis-{{ redis_version }}
+    creates: /usr/local/src/redis-{{ redis_version }}/src/redis-server
+  when: redis.stat.exists == False
+
+- name: create redis install directory
+  file:
+    path: "{{ redis_install_dir }}"
+    state: directory
+  when: redis.stat.exists == False
+
+
+- name: create /var/run/redis
+  file:
+    path: /var/run/redis
+    state: directory
+    owner: "{{ redis_user }}"
+  when: redis.stat.exists == False
+
+
+- name: install redis
+  command: make PREFIX={{ redis_install_dir }} install
+  args:
+    chdir: /usr/local/src/redis-{{ redis_version }}
+    creates: "{{ redis_install_dir }}/bin/redis-server"
+  when: redis.stat.exists == False
+
+
+- name: create redis working directory
+  file:
+    path: "{{ redis_dir }}"
+    state: directory
+  when: redis.stat.exists == False
+
+
+- name: create log directory if it does not exist
+  file:
+    state: directory
+    path: "{{redis_log_dir}}"
+    owner: "{{ redis_user }}"
+    group: "{{ redis_group }}"
+  # when:
+  #   - redis_logfile != '""'
+  #   - not logdir.stat.exists
+
+
+- name: check if pid directory exists
+  stat:
+    path: "{{ redis_pidfile|dirname }}"
+  register: piddir
+  changed_when: false
+  when: redis_pidfile != '""'
+
+- name: create pid directory if it does not exist
+  file:
+    state: directory
+    path: "{{ redis_pidfile|dirname }}"
+    owner: "{{ redis_user }}"
+    group: "{{ redis_group }}"
+  when:
+    - redis_pidfile != '""'
+    - not piddir.stat.exists
+
+
+- file: state=directory path="/etc/redis"   owner="{{ redis_user }}" group="{{ redis_group }}"
+
+- name: create redis config file
+  template:
+    src: redis.conf.j2
+    dest: "{{redis_conf_path}}"
+    owner: "{{ redis_user }}"
+    force: true
+  notify: restart redis
+
+
+- name: copy systemd conf
+  template:
+    dest: /etc/systemd/system/{{ redis_service_name }}
+    src: redis-server.service
+    mode: 0700
+    force: true
+  notify: restart redis
+
+- name: reload systemd
+  shell: systemctl daemon-reload
+
+- name: sysctl vm.overcommit_memory=1
+  shell: sysctl vm.overcommit_memory=1
+  
+
+- name: ensure redis is running
+  service:
+    name: "{{ redis_service_name }}"
+    state: restarted
+    # enable: true
+
+
+- name: "Wait for Redis port {{redis_bind}}:{{redis_port}}"
+  wait_for:
+    host: "{{redis_bind}}"
+    port: "{{ redis_port }}"
+    state: started
+    timeout: 30
   tags:
-    - remove
-  when: remove is defined
+    - zk
