@@ -18,7 +18,7 @@ kafka_group: "kafka"
 kafka_heap_opts: "-Xmx1000m -Xms1000m"
   # heap_opts: "-Xmx{{ (ansible_memtotal_mb / 2) | int }}m -Xms{{ (ansible_memtotal_mb / 2) | int }}m"
 kafka_id: 1
-kafka_bind_ip: "{{ kafka_bind_ip }}"
+kafka_bind_ip: "0.0.0.0"
 kafka_hostname: "{{ kafka_bind_ip }}"
 kafka_jmx_port: 9999
 kafka_brokerport: 9092
@@ -37,4 +37,4 @@ kafka_socket_receive_buffer_bytes: 1048576
 kafka_socket_request_max_bytes: 104857600
 kafka_socket_send_buffer_bytes: 1048576
 kafka_zookeeper_connection_timeout_ms: 1000000
-kafka_zookeeper_connect: "{{ zookeeper_hosts_port_array | join(',') }}"
+kafka_zookeeper_connect: "{{ zookeeper_connect_hosts| join(',') }}"

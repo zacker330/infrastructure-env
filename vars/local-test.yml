@@ -1,5 +1,67 @@
 ---
+JAVA_HOME: /usr/lib/jvm/java
+enableAliYunRepo: False
+
 redis_user: redis
 redis_group: redis
 redis_master_bind_ip: 192.168.23.11
 redis_master_bind_port: 6389
+
+
+
+username: vagrant
+usergroup: vagrant
+elasticsearch_username: vagrant
+elasticsearch_group: vagrant
+elasticsearch_MAX_OPEN_FILES: 755360
+elasticsearch_vm_max_map_count: 262144
+elasticsearch_http_port: 9200
+elasticsearch_host_url: "http://{{elasticsearch_bind_ip}}:{{elasticsearch_http_port}}"
+elasticsearch_host_urls:
+  - "192.168.23.12:{{elasticsearch_http_port}}"
+  - "192.168.23.13:{{elasticsearch_http_port}}"
+  - "192.168.23.14:{{elasticsearch_http_port}}"
+
+logstash_bind_ip: 127.0.0.1
+logstash_inner_ip: 127.0.0.1
+logstash_username: "{{username}}"
+logstash_group: "{{usergroup}}"
+logstash_input: |
+    redis {
+        host => "192.168.23.12"
+        data_type => "list"
+        key => "filebeat"
+    }
+
+logstash_filter: |
+
+
+
+
+logstash_output: |
+  elasticsearch {
+      hosts => [{{elasticsearch_host_urls | join('\",\"')}}]
+      manage_template => true
+      template => "{{logstash_es_index_file_path}}"
+      index => "access-server-%{+yyyy.MM.dd}"
+      template_name => "access-server"
+  }
+
+
+kibana_http_port: 5601
+kibana_bind_ip: 127.0.0.1
+kibana_visit_username: "kibana"
+kibana_visit_password: "123456"
+nginx_proxypass_to_kibana: "http://{{kibana_bind_ip}}:{{kibana_http_port}}"
+kibana_httppasswd_file_path: "{{nginx_conf_path}}/.kibana.httppasswd"
+kibana_to_elasticsearch_host_url: "http://192.168.23.12:{{elasticsearch_http_port}}"
+
+
+nginx_conf_path: /usr/local/nginx/nginx/conf
+nginx_stream_conf_path: "{{nginx_conf_path}}/streams"
+nginx_servers_conf_path: "{{nginx_conf_path}}/servers"
+
+
+filebeat_prospectors: |
+
+filebeat_output: |

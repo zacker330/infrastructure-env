@@ -1,0 +1,15 @@
+---
+# defaults file for mysql-deploy
+mysql_version: 5.6.19
+mysql_home: /usr/local/mysql
+mysql_data_dir: "{{mysql_home}}/data/opendata"
+mysql_tmp_dir: "{{mysql_home}}/data/opendata/tmp"
+mysql_logbin_dir: "{{mysql_home}}/data/opendata/binlogs"
+mysql_log_dir: "{{mysql_home}}/data/logs"
+innodb_mysql_log_dir: "{{mysql_home}}/data/logs/open_innodb_logs"
+mysql_port: 3307
+mysql_user: mysql
+mysql_group: mysql
+mysql_client_socket_path:
+mysql_root_username: mysqlroot
+mysql_root_password: mysqlrootpa2s

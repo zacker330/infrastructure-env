@@ -30,6 +30,7 @@
     src: server.properties.j2
     owner: "{{ kafka_user }}"
     group: "{{ kafka_group }}"
+    force: true
   notify:
     - restart kafka
   tags:

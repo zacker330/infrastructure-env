@@ -1,0 +1,153 @@
+---
+- name: "check user is exists"
+  shell: "id {{mysql_user}} >& /dev/null"
+  register: user_exist
+  ignore_errors: true
+
+- name: "create user if not exists"
+  user:
+    name: "{{mysql_user}}"
+    shell: /sbin/nologin
+  when: user_exist != 0
+
+
+- name: "create group if not exists"
+  group:
+    name: "{{mysql_group}}"
+    state: present
+
+
+- name: install depend
+  yum: name={{ item }} state=present
+  with_items:
+    - cmake
+    - make
+    - gcc
+    - gcc-c++
+    - ncurses-devel
+    - bison
+    - openssl-devel
+    - libselinux-python
+    - perl-Data-Dumper
+  tags:
+    install_depend
+
+- name: upload mysql source code
+  copy: src=mysql-{{mysql_version}}.tar.gz dest=/usr/src
+  tags:
+   upload_mysql_code
+  ignore_errors: true
+
+- name: uncompress source code
+  command: tar xf mysql-{{mysql_version}}.tar.gz chdir=/usr/src
+  tags:
+   uncompress_code
+
+- name: cmake code
+  command: cmake . -DCMAKE_INSTALL_PREFIX=/usr/local/mysql -DWITH_INNOBASE_STORAGE_ENGINE=1 -DWITH_ARCHIVE_STORAGE_ENGINE=1 -DWITH_BLACKHOLE_STORAGE_ENGINE=1 -DWITH_MYISAM_STORAGE_ENGINE=1 -DWITH_READLINE=1 -DWITH_SSL=system -DWITH_ZLIB=system -DDEFAULT_CHARASET=utf8mb4 -DDEFAULT_COLLATTON=utf8mb4_general_ci -DENABLED_LOCAL_INFILE=1 -DEXTRA_CHARSETS=all chdir=/usr/src/mysql-{{mysql_version}}
+  run_once: true
+  tags:
+   cmake_code
+
+- stat:
+    path: /usr/src/.had_make_mysql
+  register: had_make_mysql
+
+- name: make code
+  command: "make -j{{ ansible_processor_cores + 1 }}"
+  args:
+    chdir: "/usr/src/mysql-{{mysql_version}}"
+  when: had_make_mysql.stat.exists == False
+  tags:
+   make_code
+
+- file:
+    state: touch
+    path: /usr/src/.had_make_mysql
+
+- name: make install
+  command: make install chdir=/usr/src/mysql-{{mysql_version}}
+  when: had_make_mysql.stat.exists == False
+  tags:
+   make_install
+
+- name: add mysql service
+  template:
+    src: mysql-server.sh
+    dest: /etc/rc.d/init.d/mysqld
+    owner: "{{mysql_user}}"
+    group: "{{mysql_group}}"
+    mode: "u=rwx,og=rx"
+    force: true
+  tags:
+   add_mysql_service
+
+- shell: "chkconfig mysqld on"
+  tags:
+   add_mysql_service
+
+- name: link mysql command
+  shell: ln -s /usr/local/mysql/bin/* /usr/local/bin/
+  ignore_errors: true
+  tags:
+   ln_mysql_command
+
+
+- name: mkdir mysql dir
+  file: path={{ item }} state=directory owner={{mysql_user}} group={{mysql_group}} mode=0755
+  with_items:
+    - "{{ mysql_tmp_dir }}"
+    - "{{ mysql_data_dir }}"
+    - "{{ mysql_logbin_dir }}"
+    - "{{ mysql_log_dir }}"
+    - "{{ innodb_mysql_log_dir }}"
+  tags:
+   - mkdir_mysql_dir
+
+- name: copy config file
+  template: src=my.cnf.j2 dest=/etc/my.cnf owner={{mysql_user}} group={{mysql_group}} mode=0644 force=true
+  tags:
+   - copy_conf_file
+
+- name: "copy config file to {{mysql_home}}"
+  template:
+    src: my.cnf.j2
+    dest: "{{mysql_home}}/my.cnf"
+    owner: "{{mysql_user}}"
+    group: "{{mysql_group}}"
+    mode: 0644
+    force: true
+  tags:
+   - copy_conf_file
+
+- stat:
+    path: /usr/src/.had_initialize_mysql
+  register: had_initialize_mysql
+
+- name: "initialize mysql basedir={{mysql_home}}"
+  command: ./mysql_install_db --basedir={{mysql_home}} --defaults-file=/etc/my.cnf chdir={{mysql_home}}/scripts
+  when: had_initialize_mysql.stat.exists == False
+  tags:
+   - initialize_mysql
+
+
+- file:
+    state: touch
+    path: /usr/src/.had_initialize_mysql
+
+- name: restart mysqld
+  service:
+    name: mysqld
+    state: restarted
+    # enable: true
+  tags:
+   - restart_mysql
+
+- name: waiting mysql start
+  wait_for:
+    port: "{{mysql_port}}"
+    delay: 20
+  tags:
+   - restart_mysql
+
+- include: secure-installation.yml

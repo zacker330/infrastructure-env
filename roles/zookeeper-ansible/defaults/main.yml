@@ -17,4 +17,4 @@ zookeeper_java_opts: "-Xmx1000m -Xms1000m"
   #java_opts: "-Xmx{{ (ansible_memtotal_mb / 2) | int }}m -Xms{{ (ansible_memtotal_mb / 2) | int }}m"
   # note this is for application logs, not the actual zookeeper data logs
 zookeeper_log_dir: "{{ZK_HOME}}/log"
-zookeeper_log_level: WARN
+zookeeper_log_level: INFO

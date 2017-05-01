@@ -1,0 +1,9 @@
+---
+- hosts: mysql
+  become: yes
+  vars_files:
+    - "./vars/{{ env }}.yml"
+  roles:
+    - common
+    - {role: "firewall-ansible", firewall_allowed_tcp_ports: ["22", "{{mysql_port}}"] }
+    - mysql-ansible

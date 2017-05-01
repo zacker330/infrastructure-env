@@ -1,28 +1,47 @@
-- hosts: all
-  become: yes
+---
+
+- hosts: i4
+  become: true
   vars_files:
     - "vars/{{env}}.yml"
   roles:
     - common
-
-- hosts: syslog-ng-agents
-  become: yes
-  vars_files:
-    - "vars/{{env}}.yml"
-  roles:
-    - syslog-ng-ansible
-
-
-- hosts: log-access
-  become: yes
-  vars_files:
-    - "vars/{{env}}.yml"
-  roles:
-    - common
-    - {role: "firewall-ansible", firewall_allowed_tcp_ports: ["22", "5045", "5044", "5140", "80", "5601","9200"]}
-    - {role: "openresty"}
-    - {role: "log-access-openresty-conf"}
     - jdk8
-    - logstash-ansible
-    - elasticsearch-ansible
-    - kibana-ansible
+    - {"role": "openresty"}
+    - {"role": "kibana-openresty-conf"}
+    - {"role": "firewall-ansible", "firewall_allowed_tcp_ports":["22", "80"]}
+    - {"role": "kibana-ansible"}
+    # - {"role": logstash-ansible  }
+
+- hosts: i2
+  become: true
+  vars_files:
+    - "vars/{{env}}.yml"
+  roles:
+    - common
+    - jdk8
+    - { "role": "elasticsearch-ansible"}
+    - {"role": "firewall-ansible", "firewall_allowed_tcp_ports":["22", "9200", "9300"]}
+
+
+- hosts: i3
+  become: true
+  vars_files:
+    - "vars/{{env}}.yml"
+  roles:
+    - common
+    - jdk8
+    - { "role": "elasticsearch-ansible"}
+    - {"role": "firewall-ansible", "firewall_allowed_tcp_ports":["22", "9200", "9300"]}
+
+
+
+- hosts: i4
+  become: true
+  vars_files:
+    - "vars/{{env}}.yml"
+  roles:
+    - common
+    - jdk8
+    - { "role": "elasticsearch-ansible"}
+    - {"role": "firewall-ansible", "firewall_allowed_tcp_ports":["22", "9200", "9300"]}

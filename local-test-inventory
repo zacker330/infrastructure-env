@@ -4,3 +4,39 @@
 [redis-slave]
 192.168.23.12 env=local-test redis_bind=192.168.23.12
 192.168.23.13 env=local-test redis_bind=192.168.23.13
+
+[mysql]
+192.168.23.11 env=local-test
+
+[i1]
+192.168.23.11
+
+[i2]
+192.168.23.12
+
+[i3]
+192.168.23.13
+
+[i4]
+192.168.23.14
+
+[i2:vars]
+elasticsearch_bind_ip=192.168.23.12
+elasticsearch_is_node_master=true
+elasticsearch_is_node_data=false
+env=local-test
+firewall_allowed_tcp_ports=["22", "9200", "9300"]
+
+[i3:vars]
+elasticsearch_bind_ip=192.168.23.13
+elasticsearch_is_node_master=false
+elasticsearch_is_node_data=true
+env=local-test
+firewall_allowed_tcp_ports=["22", "9200", "9300"]
+
+[i4:vars]
+elasticsearch_bind_ip=192.168.23.14
+elasticsearch_is_node_master=false
+elasticsearch_is_node_data=true
+env=local-test
+firewall_allowed_tcp_ports=["22", "9200", "9300"]

@@ -20,12 +20,26 @@
   tags:
     - kafka
 
+- name: copy kafka
+  copy:
+    src: "{{kafka_tar_file_name}}"
+    dest: /tmp
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+  tags:
+    - kafka
+
+- stat:
+    path: "/tmp/{{kafka_tar_file_name}}"
+  register: kafka_tar
+
 - name: "Fetch kafka binary package from "
   get_url:
     dest: "/tmp/kafka_{{ kafka_version_scala }}-{{ kafka_version_kafka }}.tgz"
     url: "{{kafka_download_url}}"
     owner: "{{ kafka_user }}"
     group: "{{ kafka_group }}"
+  when: kafka_tar.stat.exists == False
   tags:
     - kafka
 

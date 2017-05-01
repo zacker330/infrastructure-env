@@ -10,6 +10,21 @@
   tags:
     - zk
 
+
+- name: copy zookeeper
+  copy:
+    src: "zookeeper-{{ zookeeper_version }}.tar.gz"
+    dest: /tmp
+    owner: "{{zookeeper_user}}"
+  tags:
+    - zk
+
+- stat:
+    path: "/tmp/zookeeper-{{ zookeeper_version }}.tar.gz"
+  register: zookeeper_tar_file
+  tags:
+    - zk
+    
 - name: "Download ZooKeeper"
   become: true
   become_user: "{{zookeeper_user}}"
@@ -17,6 +32,7 @@
     dest: "/tmp/zookeeper-{{ zookeeper_version }}.tar.gz"
     url: "http://mirrors.tuna.tsinghua.edu.cn/apache/zookeeper/zookeeper-{{ zookeeper_version }}/zookeeper-{{ zookeeper_version }}.tar.gz"
     owner: "{{ zookeeper_user }}"
+  when: zookeeper_tar_file.stat.exists == False
   tags:
     - zk
 

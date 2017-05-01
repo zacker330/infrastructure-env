@@ -1,0 +1,33 @@
+---
+
+- name: install epel-release
+  yum:
+    name: "{{item}}"
+    state: present
+  with_items:
+    - epel-release
+
+- yum:
+    name: python-passlib
+    enablerepo: epel
+    state: present
+
+- htpasswd:
+    path: "{{kibana_httppasswd_file_path}}"
+    name: "{{kibana_visit_username}}"
+    password: '{{kibana_visit_password}}'
+    owner: root
+    group: nobody
+    mode: 0640
+
+- name: template kibana.conf
+  template:
+    src: kibana.conf
+    dest: "{{nginx_servers_conf_path}}/"
+    owner: root
+    group: root
+    mode: "u=rxw,og=rx"
+    force: true
+  tags:
+    - kibana
+  notify: restart nginx

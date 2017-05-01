@@ -134,7 +134,7 @@
 
 - name: sysctl vm.overcommit_memory=1
   shell: sysctl vm.overcommit_memory=1
-  
+
 
 - name: ensure redis is running
   service:
